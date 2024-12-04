@@ -27,7 +27,7 @@ PICS = (environ.get('PICS', 'https://graph.org/vTelegraphBot-11-04-5 https://env
 NOR_IMG = environ.get("NOR_IMG", "https://te.legra.ph/file/a27dc8fe434e6b846b0f8.jpg")
 MELCOW_VID = environ.get("MELCOW_VID", "https://t.me/saravanakrish/107")
 SPELL_IMG = environ.get("SPELL_IMG", "https://graph.org/file/789e3888ab16ce1a9a535.jpg")
-
+SPELL_IMG = environ.get("SPELL_IMG", "https://graph.org/file/789e3888ab16ce1a9a535.jpg")
 
 # Admins, Channels & Users
 LOG_CHANNEL = int(environ.get('LOG_CHANNEL', '-1002062053288'))
@@ -74,7 +74,7 @@ FILE_CHANNEL = int(environ.get('FILE_CHANNEL', 0))
 # MongoDB information
 MULTIPLE_DATABASE = bool(environ.get('MULTIPLE_DATABASE', False)) # Set True or False
 
-DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://tamilmovie:tamilmovie@cluster0.lxatf.mongodb.net/tamilmovie?retryWrites=true&w=majority")   # IF Multiple Database Is False Then Fill Only This Database Url.
+DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://Tamilvc:Tamilvc@cluster0.euced.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")   # IF Multiple Database Is False Then Fill Only This Database Url.
 DATABASE_NAME = environ.get('DATABASE_NAME', "TamilBots")
 COLLECTION_NAME = environ.get('COLLECTION_NAME', 'Tamil_files')
 

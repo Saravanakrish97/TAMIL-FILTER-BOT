@@ -33,10 +33,10 @@ BUTTONS2 = {}
 SPELL_CHECK = {}
 
 @Client.on_message(filters.group & filters.text & filters.incoming)
-async def give_filter(client, message)
+async def give_filter(client, message):
     try:
-        await message.react(emoji=random.choice(REACTIONS), big=True)
-    except:
+        await message.react(emoji=random.choice(EMOJIS), big=True)
+    except Exception:
         pass
     if message.chat.id != SUPPORT_CHAT_ID:
         settings = await get_settings(message.chat.id)
@@ -58,17 +58,13 @@ async def give_filter(client, message)
             settings = await get_settings(message.chat.id)
             try:
                 if settings['auto_ffilter']:
-                    ai_search = True
-                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                    await auto_filter(client, message)
             except KeyError:
                 grpid = await active_connection(str(message.from_user.id))
                 await save_group_settings(grpid, 'auto_ffilter', True)
                 settings = await get_settings(message.chat.id)
                 if settings['auto_ffilter']:
-                    ai_search = True
-                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                    await auto_filter(client, message)
     else: #a better logic to avoid repeated lines of code in auto_filter function
         search = message.text
         temp_files, temp_offset, total_results = await get_search_results(chat_id=message.chat.id, query=search.lower(), offset=0, filter=True)
@@ -81,16 +77,14 @@ async def give_filter(client, message)
 async def pm_text(bot, message):
     try:
         await message.react(emoji=random.choice(REACTIONS), big=True)
-    except:
+    except Exception:
         pass
     content = message.text
     user = message.from_user.first_name
     user_id = message.from_user.id
     if content.startswith("/") or content.startswith("#"): return  # ignore commands and hashtags
     if PM_SEARCH == True:
-        ai_search = True
-        reply_msg = await bot.send_message(message.from_user.id, f"<b><i>Searching For {content} 🔍</i></b>", reply_to_message_id=message.id)
-        await auto_filter(bot, content, message, reply_msg, ai_search)
+        await auto_filter(bot, message)
     else:
         await message.reply_text(text=f"<b>ʜᴇʏ {user} 😍 ,\n\nʏᴏᴜ ᴄᴀɴ'ᴛ ɢᴇᴛ ᴍᴏᴠɪᴇs ꜰʀᴏᴍ ʜᴇʀᴇ. ʀᴇǫᴜᴇsᴛ ɪᴛ ɪɴ ᴏᴜʀ <a href=https://t.me/MovieDiscussion24x7>ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ</a> ᴏʀ ᴄʟɪᴄᴋ ʀᴇǫᴜᴇsᴛ ʜᴇʀᴇ ʙᴜᴛᴛᴏɴ ʙᴇʟᴏᴡ 👇</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📝 ʀᴇǫᴜᴇsᴛ ʜᴇʀᴇ ", url=f"https://t.me/MovieDiscussion24x7")]]))
         await bot.send_message(chat_id=LOG_CHANNEL, text=f"<b>#𝐏𝐌_𝐌𝐒𝐆\n\nNᴀᴍᴇ : {user}\n\nID : {user_id}\n\nMᴇssᴀɢᴇ : {content}</b>")
@@ -262,9 +256,7 @@ async def advantage_spoll_choker(bot, query):
             files, offset, total_results = await get_search_results(query.message.chat.id, movie, offset=0, filter=True)
             if files:
                 k = (movie, files, offset, total_results)
-                ai_search = True
-                reply_msg = await query.message.edit_text(f"<b><i>Searching For {movie} 🔍</i></b>")
-                await auto_filter(bot, movie, query, reply_msg, ai_search, k)
+                await auto_filter(bot, query, k)
             else:
                 reqstr1 = query.from_user.id if query.from_user else 0
                 reqstr = await bot.get_users(reqstr1)
@@ -2737,7 +2729,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
             await query.message.edit_reply_markup(reply_markup)
     await query.answer(MSG_ALRT)
 
-async def auto_filter(client, name, msg, reply_msg, ai_search, spoll=False):
+async def auto_filter(client, msg, spoll=False):
     curr_time = datetime.now(pytz.timezone('Asia/Kolkata')).time()
     if not spoll:
         message = msg
@@ -2745,7 +2737,8 @@ async def auto_filter(client, name, msg, reply_msg, ai_search, spoll=False):
         if re.findall("((^\/|^,|^!|^\.|^[\U0001F600-\U000E007F]).*)", message.text):
             return
         if len(message.text) < 100:
-            search = name
+            search = message.text
+            m=await message.reply_text(f"<b><i> 𝖲𝖾𝖺𝗋𝖼𝗁𝗂𝗇𝗀 𝖿𝗈𝗋 '{search}' 🔎</i></b>")
             search = search.lower()
             find = search.split(" ")
             search = ""
@@ -2763,8 +2756,9 @@ async def auto_filter(client, name, msg, reply_msg, ai_search, spoll=False):
             files, offset, total_results = await get_search_results(message.chat.id ,search, offset=0, filter=True)
             settings = await get_settings(message.chat.id)
             if not files:
+                await m.delete()
                 if settings["spell_check"]:
-                    return await advantage_spell_chok(client, name, msg, reply_msg, ai_search)
+                    return await advantage_spell_chok(client, msg)
                 else:
                     return await reply_msg.edit_text(f"**⚠️ No File Found For Your Query - {name}**\n**Make Sure Spelling Is Correct.**")
         else:
@@ -2941,9 +2935,9 @@ async def auto_filter(client, name, msg, reply_msg, ai_search, spoll=False):
             await fuk.delete()
             await message.delete()
 
-async def advantage_spell_chok(client, name, msg, reply_msg, sk_search):
+async def advantage_spell_chok(client, msg):
     mv_id = msg.id
-    mv_rqst = name
+    mv_rqst = msg.text
     reqstr1 = msg.from_user.id if msg.from_user else 0
     reqstr = await client.get_users(reqstr1)
     settings = await get_settings(msg.chat.id)
@@ -2961,7 +2955,11 @@ async def advantage_spell_chok(client, name, msg, reply_msg, sk_search):
         ]]
         if NO_RESULTS_MSG:
             await client.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, mv_rqst)))
-        k = await reply_msg.edit_text(text=script.I_CUDNT.format(mv_rqst), reply_markup=InlineKeyboardMarkup(button))
+        k = await msg.reply_photo(
+            photo=SPELL_IMG, 
+            caption=script.I_CUDNT.format(mv_rqst),
+            reply_markup=InlineKeyboardMarkup(button)
+        )
         await asyncio.sleep(30)
         await k.delete()
         return
@@ -2973,36 +2971,29 @@ async def advantage_spell_chok(client, name, msg, reply_msg, sk_search):
         ]]
         if NO_RESULTS_MSG:
             await client.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, mv_rqst)))
-        k = await reply_msg.edit_text(text=script.I_CUDNT.format(mv_rqst), reply_markup=InlineKeyboardMarkup(button))
+        k = await msg.reply_photo(
+            photo=SPELL_IMG, 
+            caption=script.I_CUDNT.format(mv_rqst),
+            reply_markup=InlineKeyboardMarkup(button)
+        )
         await asyncio.sleep(30)
         await k.delete()
         return
     movielist += [movie.get('title') for movie in movies]
     movielist += [f"{movie.get('title')} {movie.get('year')}" for movie in movies]
     SPELL_CHECK[mv_id] = movielist
-    if AI_SPELL_CHECK == True and sk_search == True:
-        sk_search_new = False
-        sk_ai_msg = await reply_msg.edit_text("<b><i>Tamilini Ai Try To Find Your Movie With Your Wrong Spelling.</i></b>")
+    if AI_SPELL_CHECK == True:
+        sk_ai_msg = await msg.reply_text("<b><i>Tamilini Ai Try To Find Your Movie With Your Wrong Spelling.</i></b>")
         movienamelist = []
         movienamelist += [movie.get('title') for movie in movies]
-        for techsk in movienamelist:
+        for namesk in movienamelist:
             try:
                 mv_rqst = mv_rqst.capitalize()
             except:
                 pass
-            if mv_rqst.startswith(techsk[0]):
-                await auto_filter(client, techsk, msg, reply_msg, sk_search_new)
+            if mv_rqst.startswith(namesk[0]):
+                await auto_filter(client, namesk, msg)
                 break
-        reqst_gle = mv_rqst.replace(" ", "+")
-        button = [[
-            InlineKeyboardButton("Gᴏᴏɢʟᴇ", url=f"https://www.google.com/search?q={reqst_gle}")
-        ]]
-        if NO_RESULTS_MSG:
-            await client.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, mv_rqst)))
-        k = await reply_msg.edit_text(text=script.I_CUDNT.format(mv_rqst), reply_markup=InlineKeyboardMarkup(button))
-        await asyncio.sleep(30)
-        await k.delete()
-        return
     else:
         btn = [
             [
@@ -3014,8 +3005,10 @@ async def advantage_spell_chok(client, name, msg, reply_msg, sk_search):
             for k, movie_name in enumerate(movielist)
         ]
         btn.append([InlineKeyboardButton(text="Close", callback_data=f'spol#{reqstr1}#close_spellcheck')])
-        spell_check_del = await reply_msg.edit_text(
-            text=script.CUDNT_FND.format(mv_rqst),
+        spell_check_del = await msg.reply_photo(
+            photo=(SPELL_IMG),
+            caption=(script.CUDNT_FND.format(mv_rqst)),
+            reply_to_message_id=msg.id,
             reply_markup=InlineKeyboardMarkup(btn)
         )
         try:
@@ -3029,6 +3022,7 @@ async def advantage_spell_chok(client, name, msg, reply_msg, sk_search):
             if settings['auto_delete']:
                 await asyncio.sleep(600)
                 await spell_check_del.delete()
+
 
 async def manual_filters(client, message, text=False):
     settings = await get_settings(message.chat.id)
@@ -3057,9 +3051,7 @@ async def manual_filters(client, message, text=False):
                             )
                             try:
                                 if settings['auto_ffilter']:
-                                    ai_search = True
-                                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                    await auto_filter(client, message)
                                     try:
                                         if settings['auto_delete']:
                                             await joelkb.delete()
@@ -3086,9 +3078,7 @@ async def manual_filters(client, message, text=False):
                                 await save_group_settings(grpid, 'auto_ffilter', True)
                                 settings = await get_settings(message.chat.id)
                                 if settings['auto_ffilter']:
-                                    ai_search = True
-                                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                    await auto_filter(client, message)
 
                         else:
                             button = eval(btn)
@@ -3102,9 +3092,7 @@ async def manual_filters(client, message, text=False):
                             )
                             try:
                                 if settings['auto_ffilter']:
-                                    ai_search = True
-                                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                    await auto_filter(client, message)
                                     try:
                                         if settings['auto_delete']:
                                             await joelkb.delete()
@@ -3131,9 +3119,7 @@ async def manual_filters(client, message, text=False):
                                 await save_group_settings(grpid, 'auto_ffilter', True)
                                 settings = await get_settings(message.chat.id)
                                 if settings['auto_ffilter']:
-                                    ai_search = True
-                                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                    await auto_filter(client, message)
                     elif btn == "[]":
                         joelkb = await client.send_cached_media(
                             group_id,
@@ -3144,9 +3130,7 @@ async def manual_filters(client, message, text=False):
                         )
                         try:
                             if settings['auto_ffilter']:
-                                ai_search = True
-                                reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                await auto_filter(client, message)
                                 try:
                                     if settings['auto_delete']:
                                         await joelkb.delete()
@@ -3173,9 +3157,7 @@ async def manual_filters(client, message, text=False):
                             await save_group_settings(grpid, 'auto_ffilter', True)
                             settings = await get_settings(message.chat.id)
                             if settings['auto_ffilter']:
-                                ai_search = True
-                                reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                await auto_filter(client, message)
                     else:
                         button = eval(btn)
                         joelkb = await message.reply_cached_media(
@@ -3186,9 +3168,7 @@ async def manual_filters(client, message, text=False):
                         )
                         try:
                             if settings['auto_ffilter']:
-                                ai_search = True
-                                reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                await auto_filter(client, message)
                                 try:
                                     if settings['auto_delete']:
                                         await joelkb.delete()
@@ -3215,9 +3195,7 @@ async def manual_filters(client, message, text=False):
                             await save_group_settings(grpid, 'auto_ffilter', True)
                             settings = await get_settings(message.chat.id)
                             if settings['auto_ffilter']:
-                                ai_search = True
-                                reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                await auto_filter(client, message)
 
                 except Exception as e:
                     logger.exception(e)
@@ -3254,9 +3232,7 @@ async def global_filters(client, message, text=False):
                                 settings = await get_settings(message.chat.id)
                                 try:
                                     if settings['auto_ffilter']:
-                                        ai_search = True
-                                        reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                        await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                        await auto_filter(client, message)
                                         try:
                                             if settings['auto_delete']:
                                                 await joelkb.delete()
@@ -3283,9 +3259,7 @@ async def global_filters(client, message, text=False):
                                     await save_group_settings(grpid, 'auto_ffilter', True)
                                     settings = await get_settings(message.chat.id)
                                     if settings['auto_ffilter']:
-                                        ai_search = True
-                                        reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                        await auto_filter(client, message.text, message, reply_msg, ai_search) 
+                                        await auto_filter(client, message)
                             else:
                                 try:
                                     if settings['auto_delete']:
@@ -3311,9 +3285,7 @@ async def global_filters(client, message, text=False):
                                 settings = await get_settings(message.chat.id)
                                 try:
                                     if settings['auto_ffilter']:
-                                        ai_search = True
-                                        reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                        await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                        await auto_filter(client, message)
                                         try:
                                             if settings['auto_delete']:
                                                 await joelkb.delete()
@@ -3340,9 +3312,7 @@ async def global_filters(client, message, text=False):
                                     await save_group_settings(grpid, 'auto_ffilter', True)
                                     settings = await get_settings(message.chat.id)
                                     if settings['auto_ffilter']:
-                                        ai_search = True
-                                        reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                        await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                        await auto_filter(client, message)
                             else:
                                 try:
                                     if settings['auto_delete']:
@@ -3366,9 +3336,7 @@ async def global_filters(client, message, text=False):
                             settings = await get_settings(message.chat.id)
                             try:
                                 if settings['auto_ffilter']:
-                                    ai_search = True
-                                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                    await auto_filter(client, message)
                                     try:
                                         if settings['auto_delete']:
                                             await joelkb.delete()
@@ -3395,9 +3363,7 @@ async def global_filters(client, message, text=False):
                                 await save_group_settings(grpid, 'auto_ffilter', True)
                                 settings = await get_settings(message.chat.id)
                                 if settings['auto_ffilter']:
-                                    ai_search = True
-                                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                    await auto_filter(client, message.text, message, reply_msg, ai_search) 
+                                    await auto_filter(client, message)
                         else:
                             try:
                                 if settings['auto_delete']:
@@ -3422,9 +3388,7 @@ async def global_filters(client, message, text=False):
                             settings = await get_settings(message.chat.id)
                             try:
                                 if settings['auto_ffilter']:
-                                    ai_search = True
-                                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                    await auto_filter(client, message)
                                     try:
                                         if settings['auto_delete']:
                                             await joelkb.delete()
@@ -3451,9 +3415,7 @@ async def global_filters(client, message, text=False):
                                 await save_group_settings(grpid, 'auto_ffilter', True)
                                 settings = await get_settings(message.chat.id)
                                 if settings['auto_ffilter']:
-                                    ai_search = True
-                                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
-                                    await auto_filter(client, message.text, message, reply_msg, ai_search)
+                                    await auto_filter(client, message)
                         else:
                             try:
                                 if settings['auto_delete']:
